@@ -6,8 +6,9 @@ authors = ["Yuuki Fujihara <mail@fujiy.dev>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-tornado = "^6.1"
 protobuf = "^3.17.0"
+grpcio = "^1.38.0"
+grpcio-tools = "^1.38.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

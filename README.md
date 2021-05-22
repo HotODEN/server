@@ -17,7 +17,7 @@ poetry install
 ## プロトコルを更新
 ```
 git submodule foreach git pull origin master
-protoc --python_out=./ protocol/*.proto
+poetry run python -m grpc_tools.protoc -I.protocol/ --python_out=protocol --grpc_python_out=protocol protocol/*.proto
 ```
 
 ## ローカルで実行

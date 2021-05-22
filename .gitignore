@@ -1,1 +1,6 @@
 build/
+
+server/protocol/*_pb2.py
+server/protocol/*_pb2_grpc.py
+
+__pycache__

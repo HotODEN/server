@@ -1,27 +1,25 @@
-import tornado.ioloop
-import tornado.web
-import tornado.websocket
+from concurrent import futures
+import grpc
+from protocol import api_pb2_grpc
+from protocol import api_pb2
 
-cl = []
+class APIServicer(api_pb2_grpc.APIServicer):
 
-class WebSocketHandler(tornado.websocket.WebSocketHandler):
-    def open(self):
-        if self not in cl:
-            cl.append(self)
-
-    def on_message(self, message):
-        for client in cl:
-            client.write_message(message)
-
-    def on_close(self):
-        if self in cl:
-            cl.remove(self)
+    def GetInfo(self, request, context):
+        return api_pb2.Info(version="0.1.0")
 
 
-application = tornado.web.Application([
-    (r"/", WebSocketHandler),
-])
+def serve():
+  server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+  api_pb2_grpc.add_APIServicer_to_server(
+      APIServicer(), server)
+  server.add_insecure_port('[::]:8080')
+  server.start()
+  server.wait_for_termination()
 
 if __name__ == "__main__":
-    application.listen(8080)
-    tornado.ioloop.IOLoop.current().start()
+    print ("Starting server...")
+
+    serve()
+    # application.listen(8080)
+    # tornado.ioloop.IOLoop.current().start()
