@@ -1,17 +1,19 @@
 cmake_minimum_required(VERSION 2.9)
 project(slam)
 
+set(CMAKE_MACOSX_RPATH OFF)
+
 add_definitions(-std=c++11)
 
 add_subdirectory(ORB_SLAM2)
 add_subdirectory(protocol)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+find_package(Protobuf REQUIRED)
+include_directories(${PROTOBUF_INCLUDE_DIR})
 
-FIND_PACKAGE(Protobuf REQUIRED)
-message(STATUS "Protobuf: "${PROTOBUF_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIR})
+include_directories(ORB_SLAM2 ORB_SLAM2/include)
 
-ADD_EXECUTABLE(main slam/main.cpp)
-TARGET_LINK_LIBRARIES(main protocol ${PROTOBUF_LIBRARY})
+add_executable(main slam/main.cpp)
+target_link_libraries(main ORB_SLAM2 protocol ${PROTOBUF_LIBRARY})
