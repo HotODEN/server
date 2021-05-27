@@ -14,7 +14,7 @@ class SLAMProcess():
         self.process = subprocess.Popen(
             ['./build/main',
              'ORB_SLAM2/Vocabulary/ORBvoc.txt', 'slam/TUM.yaml'],
-            stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=sys.stderr)
+            stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
         while True:
             r = self.process.stdout.readline()
@@ -27,15 +27,32 @@ class SLAMProcess():
         data_bytes = request.SerializeToString()
         size = len(data_bytes)
         size_bytes = size.to_bytes(4, byteorder='little')
-        # print(data_bytes, size, size_bytes)
+
         self.process.stdin.write(size_bytes)
         self.process.stdin.write(data_bytes)
         self.process.stdin.flush()
 
     def receive(self):
+        print("read")
+        while True:
+            self.process.stdout.flush()
+            c = self.process.stdout.read(1)
+            if c == b'\0':
+                break
+            r = self.process.stdout.readline()
+            print(c + r)
+            self.process.stdout.flush()
+
+        print('next')
+
         size_bytes = self.process.stdout.read(4)
         size = int.from_bytes(size_bytes, 'little')
+
+        print('size: ', size)
+
         data_bytes = self.process.stdout.read(size)
+
+        print("done")
 
         # print('return:')
         # print(data_bytes)
@@ -72,31 +89,38 @@ class APIServicer(API_gRPC.APIServicer):
         # loop.run_in_executor(None, self.add_slam_pool)
         return self.slam_pool.pop()
 
+    def return_slam_to_pool(self, slam):
+        self.slam_pool += [slam]
+
     def GetInfo(self, request, context):
         return API.Info(version='0.1.0')
 
     def Track(self, request_iterator, context):
 
         try:
-
-            print('track init\n')
-
-            print(request_iterator.__next__())
+            print('track init')
 
             slam = self.get_slam_from_pool()
 
-            frame = Data.JPEGFrame(data=b'')
-            print(frame)
+            for req in request_iterator:
 
-            request = SLAM.TrackRequest(id=1, frame=frame)
+                frame = req.frame
+                # print(frame)
 
-            print(request)
+                request = SLAM.TrackRequest(frame=frame)
+                # print(request)
 
+                slam.send(request)
+
+                print(slam.receive())
+
+                yield(API.Update())
+
+            print('end')
+
+            request = SLAM.TrackRequest(reset=True)
             slam.send(request)
-
-            print(slam.receive())
-
-            yield(API.Update())
+            self.return_slam_to_pool(slam)
 
         except Exception as err:
             print(err)
