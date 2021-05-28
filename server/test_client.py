@@ -12,7 +12,7 @@ from protocol import data_pb2 as Data
 images = sorted(glob.glob('ORB_SLAM2/sequence/rgbd_dataset_freiburg1_xyz/rgb/*.png'))
 
 def track_request():
-    for path in images:
+    for path in images[:200]:
         # img = Image.open(path)
         # img_bytes = io.BytesIO()
         # img.save(img_bytes, format='PNG')
@@ -28,7 +28,7 @@ def track_request():
 
         yield API.Request(userId=42, frame=frame)
 
-        time.sleep(0.03)
+        time.sleep(0.033)
 
     print('end')
 

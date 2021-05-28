@@ -13,8 +13,8 @@ class SLAMProcess():
     def __init__(self):
         self.process = subprocess.Popen(
             ['./build/main',
-             'ORB_SLAM2/Vocabulary/ORBvoc.txt', 'slam/TUM.yaml'],
-            stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+             'ORB_SLAM2/Vocabulary/ORBvoc.bin', 'slam/TUM.yaml'],
+            stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=sys.stderr)
 
         while True:
             r = self.process.stdout.readline()
@@ -33,26 +33,26 @@ class SLAMProcess():
         self.process.stdin.flush()
 
     def receive(self):
-        print("read")
         while True:
-            self.process.stdout.flush()
+            # self.process.stdout.flush()
             c = self.process.stdout.read(1)
+            # print('char: ', c)
+            if c == b'':
+                print('something wrong')
+                break
             if c == b'\0':
                 break
             r = self.process.stdout.readline()
-            print(c + r)
-            self.process.stdout.flush()
+            print(' ' + (c + r).decode('utf-8'))
+            # self.process.stdout.flush()
 
-        print('next')
 
         size_bytes = self.process.stdout.read(4)
         size = int.from_bytes(size_bytes, 'little')
 
-        print('size: ', size)
+        # print('size: ', size)
 
         data_bytes = self.process.stdout.read(size)
-
-        print("done")
 
         # print('return:')
         # print(data_bytes)
@@ -112,7 +112,7 @@ class APIServicer(API_gRPC.APIServicer):
 
                 slam.send(request)
 
-                print(slam.receive())
+                slam.receive()
 
                 yield(API.Update())
 

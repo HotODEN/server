@@ -22,7 +22,6 @@ int main(int argc, char **argv) {
     }
 
 
-
     ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::MONOCULAR,true);
 
     std::cout << "INITIALIZED" << std::endl;
@@ -31,6 +30,8 @@ int main(int argc, char **argv) {
     //     std::cout << "<VIEWER STARTED>" << std::endl;
     //     SLAM.StartViewer();
     // });
+
+    // std::set<ORB_SLAM2::MapPoint*> trackedMapPoints;
 
     while (true) {
         slam::TrackRequest request;
@@ -73,11 +74,18 @@ int main(int argc, char **argv) {
 
 
         auto frame_data = request.frame().data();
-        double timestamp =
-            request.frame().timestamp().seconds() +
-            request.frame().timestamp().nanos() * 1e-9;
+
+
+        double timestamp = std::time(nullptr);
+        // double timestamp =
+        //     request.frame().timestamp().seconds() +
+        //     request.frame().timestamp().nanos() * 1e-9;
         // std::cout << "<RECEIVED>" << setprecision(15) << timestamp
         //           <<  " " << frame_data.length() << std::endl;
+
+
+
+
         std::vector<uchar> png(frame_data.begin(), frame_data.end());
         cv::Mat frame = cv::imdecode(png, cv::IMREAD_COLOR);
 
@@ -88,8 +96,26 @@ int main(int argc, char **argv) {
         cv::Mat camera_pose = SLAM.TrackMonocular(frame, timestamp);
 
 
-        std::cout << "<POSE>\n" << SLAM.GetTrackingState() << camera_pose << std::endl;
-        std::cout << SLAM.GetTrackedMapPoints().size() << std::endl;
+        // std::cerr << "<POSE>\n" << SLAM.GetTrackingState() << camera_pose << std::endl;
+
+        std::vector<ORB_SLAM2::MapPoint*> mapPoints =
+            SLAM.GetTrackedMapPoints();
+
+        // std::vector<ORB_SLAM2::MapPoint*> trackedMapPoints;
+        int size = 0;
+
+        for (int i = 0, end = mapPoints.size(); i < end; i++) {
+            if (!mapPoints[i] || mapPoints[i]->isBad()) continue;
+            // trackedMapPoints.insert(mapPoints[i]);
+            size++;
+        }
+
+        std::cerr << "SIZE: " << size << "/" << mapPoints.size()
+                  << " " << SLAM.MapChanged()
+                  << " " << SLAM.GetTrackingState()
+                  << std::endl;
+
+
 
 
         const auto& origin = new Location();
