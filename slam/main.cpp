@@ -141,13 +141,9 @@ int main(int argc, char **argv) {
 
                 // cv::Mat Rwc(3,3,CV_32F);
                 // cv::Mat twc(3,1,CV_32F);
-
                 // Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
                 // twc = -Rwc*Tcw.rowRange(0,3).col(3);
-
-
                 // cv::Mat Rt;
-
                 // cv::hconcat(Rwc, twc, Rt);
 
                 cv::Mat pos_ = (cv::Mat_<float>(4, 1) <<
@@ -163,16 +159,6 @@ int main(int argc, char **argv) {
 
                 if (0 <= u && u <= 640 && 0 <= v && v <= 480) {
 
-                    // cv::Mat pos_in_image = Tcw * pos_;
-                    // std::cerr << pos_in_image << std::endl;
-                    // std::cerr << K << std::endl;
-                    // std::cerr << Tcw << std::endl;
-                    // std::cerr << pos_ << std::endl;
-                    // std::cerr << Rwc << std::endl;
-                    // std::cerr << twc << std::endl;
-                    // std::cerr << Rt << std::endl;
-                    // std::cerr << K * Rt * pos_ << std::endl;
-
                     cv::Vec3b pixel = frame.at<cv::Vec3b>(v, u);
 
                     if (knownColors.find(mapPoint) == knownColors.end()) {
@@ -183,19 +169,8 @@ int main(int argc, char **argv) {
                         knownColors[mapPoint] += pixel / 2;
                     }
 
-                    // Point* point = result->add_points();
-                    // point->mutable_pos()->set_x(pos.at<float>(0));
-                    // point->mutable_pos()->set_y(pos.at<float>(1));
-                    // point->mutable_pos()->set_z(pos.at<float>(2));
-                    // point->mutable_color()->set_blue(pixel[0] / 256.0);
-                    // point->mutable_color()->set_green(pixel[1] / 256.0);
-                    // point->mutable_color()->set_red(pixel[2] / 256.0);
-
-
                     // if (show) {
-                    //     std::cerr << u << ' ' <<  v << std::endl;
-                    //     std::cerr << pixel << std::endl;
-                    //     std::cerr << point << std::endl;
+                    //     std::cerr << mapPoint->GetNormal() << std::endl;
                     //     show = false;
                     // }
 
@@ -211,11 +186,17 @@ int main(int argc, char **argv) {
             if (!mapPoint || mapPoint->isBad()) continue;
 
             cv::Mat pos = mapPoint->GetWorldPos();
+            cv::Mat norm = mapPoint->GetNormal();
 
             Point* point = result->add_points();
-            point->mutable_pos()->set_x(pos.at<float>(0));
-            point->mutable_pos()->set_y(-pos.at<float>(1));
-            point->mutable_pos()->set_z(-pos.at<float>(2));
+
+            point->mutable_position()->set_x(pos.at<float>(0));
+            point->mutable_position()->set_y(-pos.at<float>(1));
+            point->mutable_position()->set_z(-pos.at<float>(2));
+
+            point->mutable_normal()->set_x(norm.at<float>(0));
+            point->mutable_normal()->set_y(-norm.at<float>(1));
+            point->mutable_normal()->set_z(-norm.at<float>(2));
 
             if (knownColors.find(mapPoint) != knownColors.end()) {
                 cv::Vec3b pixel = knownColors.at(mapPoint);

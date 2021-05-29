@@ -3,6 +3,7 @@ from concurrent import futures
 import subprocess
 import grpc
 import sys
+import open3d as o3d
 from protocol import api_pb2 as API
 from protocol import api_pb2_grpc as API_gRPC
 from protocol import data_pb2 as Data
@@ -114,7 +115,60 @@ class APIServicer(API_gRPC.APIServicer):
 
                 result = slam.receive()
 
-                yield(API.Update(state=result.state, points=result.points))
+                if not result.points:
+                    yield(API.Update(state=result.state))
+                    continue
+
+                cloud = o3d.geometry.PointCloud()
+                cloud.points = o3d.utility.Vector3dVector([])
+                cloud.normals = o3d.utility.Vector3dVector([])
+                cloud.colors = o3d.utility.Vector3dVector([])
+
+                for point in result.points:
+                    cloud.points.append([point.position.x,
+                                         point.position.y,
+                                         point.position.z])
+                    cloud.normals.append([point.normal.x,
+                                          point.normal.y,
+                                          point.normal.z])
+                    cloud.colors.append([point.color.red,
+                                         point.color.green,
+                                         point.color.blue])
+
+                # cloud.estimate_normals()
+
+                rec_mesh = (o3d.geometry.TriangleMesh
+                            .create_from_point_cloud_alpha_shape(cloud, 0.1))
+
+                # rec_mesh = (o3d.geometry.TriangleMesh
+                #             .create_from_point_cloud_ball_pivoting(
+                #                 cloud,
+                #                 o3d.utility.DoubleVector(
+                #                     [0.02, 0.04, 0.08, 0.16]))
+                #             )
+
+                mesh = Data.Mesh()
+                for triangle in rec_mesh.triangles:
+                    mesh.triangles.append(
+                        Data.Triangle(a=triangle[0],
+                                      b=triangle[1],
+                                      c=triangle[2]))
+
+                for i in range(len(rec_mesh.vertices)):
+                    vertice = rec_mesh.vertices[i]
+                    normal = rec_mesh.vertex_normals[i]
+                    color = rec_mesh.vertex_colors[i]
+                    pos = Data.Vec3(x=vertice[0], y=vertice[1], z=vertice[2])
+                    norm = Data.Vec3(x=normal[0], y=normal[1], z=normal[2])
+                    col = Data.Color(red=color[0],
+                                     green=color[1],
+                                     blue=color[2])
+                    mesh.vertices.append(
+                        Data.Point(position=pos, normal=norm, color=col))
+
+                print(len(rec_mesh.vertices), len(result.points))
+
+                yield(API.Update(state=result.state, mesh=mesh))
 
             print('end')
 
