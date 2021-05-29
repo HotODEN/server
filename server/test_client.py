@@ -11,7 +11,7 @@ from protocol import api_pb2 as API
 from protocol import api_pb2_grpc as API_gRPC
 from protocol import data_pb2 as Data
 
-images = sorted(glob.glob('ORB_SLAM2/sequence/freiburg1_floor/rgb/*.png'))
+images = sorted(glob.glob('ORB_SLAM2/sequence/freiburg1_xyz/rgb/*.png'))
 
 def track_request():
     for path in images[:]:
@@ -21,7 +21,7 @@ def track_request():
         timestamp = Timestamp(seconds=int(t), nanos=int(t % 1 * 1e9))
         frame = Data.PNGFrame(timestamp=timestamp, data=png_data)
 
-        print(path, frame.timestamp)
+        print(path)
 
         yield API.Request(userId=42, frame=frame)
 
@@ -40,25 +40,47 @@ if __name__ == "__main__":
 
 
     points = np.asarray([[0, 0, 0], [0, 1, 0]])
+    colors = np.asarray([[0, 0, 0], [0, 1, 0]])
     cloud.points = o3d.utility.Vector3dVector(points)
+    cloud.colors = o3d.utility.Vector3dVector(colors)
+
 
     # o3d.visualization.draw_geometries([cloud])
 
     vis = o3d.visualization.Visualizer()
     vis.create_window()
     vis.add_geometry(cloud)
+    vis.get_render_option().point_size = 20
 
     def updating_thread():
         for update in stub.Track(track_request()):
-            points = np.zeros((len(update.points), 3))
+            cloud.points.clear()
+            cloud.colors.clear()
+            # points = np.zeros((len(update.points), 3))
+            # colors = np.zeros((len(update.points), 3))
+
             for i, point in enumerate(update.points):
-                points[i][0] = point.x
-                points[i][1] = point.y
-                points[i][2] = point.z
+                # points[i][0] = point.pos.x
+                # points[i][1] = point.pos.y
+                # points[i][2] = point.pos.z
 
-            print(len(points), update.state)
+                # colors[i][0] = point.color.red
+                # colors[i][1] = point.color.green
+                # colors[i][2] = point.color.blue
 
-            cloud.points = o3d.utility.Vector3dVector(points)
+
+                cloud.points.append(
+                    [point.pos.x, point.pos.y, point.pos.z])
+                cloud.colors.append(
+                    [point.color.red, point.color.green, point.color.blue])
+
+                # if i == 0:
+                #     print(point)
+
+            print(len(update.points), update.state)
+
+            # cloud.points.append(points)
+            # cloud.colors.append(colors)
 
 
     thread = threading.Thread(target=updating_thread)
