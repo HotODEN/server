@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
             | (unsigned char)size_buf[3] << 24;
 
         if (input_size > 1024 * 1024)
-            std::cout << "BUFFER OVERFLOW: "  << input_size << std::endl;
+            std::cerr << "BUFFER OVERFLOW: "  << input_size << std::endl;
 
         char input_buf[1024*1024];
         std::cin.read(input_buf, input_size);
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
         std::string input(input_buf, input_size);
 
         if (!request.ParseFromString(input)) {
-            std::cout << "<Failed to parse request>" << std::endl;
+            std::cerr << "<Failed to parse request>" << std::endl;
 
             for (int i = 0; i < input_size; i++) {
                 std::cout << '\\' << (unsigned)input[i];
@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
         }
 
         if (request.has_reset() && request.reset()) {
-            std::cout << "<RESET SLAM>" << std::endl;
+            std::cerr << "<RESET SLAM>" << std::endl;
 
             SLAM.Reset();
             // SLAM.StartViewer();
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
         std::vector<uchar> png(frame_data.begin(), frame_data.end());
         cv::Mat frame = cv::imdecode(png, cv::IMREAD_COLOR);
 
-        if (frame.empty()) std::cout << "<EMPTY IMAGE>" << std::endl;
+        if (frame.empty()) std::cerr << "<EMPTY IMAGE>" << std::endl;
 
         // cv::imwrite("img.png", frame);
 
@@ -97,23 +97,6 @@ int main(int argc, char **argv) {
 
 
         // std::cerr << "<POSE>\n" << SLAM.GetTrackingState() << camera_pose << std::endl;
-
-        std::vector<ORB_SLAM2::MapPoint*> mapPoints =
-            SLAM.GetTrackedMapPoints();
-
-        // std::vector<ORB_SLAM2::MapPoint*> trackedMapPoints;
-        int size = 0;
-
-        for (int i = 0, end = mapPoints.size(); i < end; i++) {
-            if (!mapPoints[i] || mapPoints[i]->isBad()) continue;
-            // trackedMapPoints.insert(mapPoints[i]);
-            size++;
-        }
-
-        std::cerr << "SIZE: " << size << "/" << mapPoints.size()
-                  << " " << SLAM.MapChanged()
-                  << " " << SLAM.GetTrackingState()
-                  << std::endl;
 
 
 
@@ -128,6 +111,39 @@ int main(int argc, char **argv) {
 
         const auto& result = new slam::TrackResult();
         result->set_allocated_camera(camera);
+        result->set_state(static_cast<TrackingState>(SLAM.GetTrackingState()));
+
+        std::vector<ORB_SLAM2::MapPoint*> mapPoints =
+            SLAM.GetAllMapPoints();
+
+        // std::vector<ORB_SLAM2::MapPoint*> _refPoints =
+        //     SLAM.GetReferenceMapPoints();
+
+        // std::set<ORB_SLAM2::MapPoint*>
+        //     refPoints(_refPoints.begin(), _refPoints.end());
+
+        // std::vector<ORB_SLAM2::MapPoint*> trackedMapPoints;
+        int size = 0;
+
+        for (int i = 0, end = mapPoints.size(); i < end; i++) {
+            if (!mapPoints[i] || mapPoints[i]->isBad()) continue;
+            // trackedMapPoints.insert(mapPoints[i]);
+
+            auto pos = mapPoints[i]->GetWorldPos();
+
+            Position* point = result->add_points();
+            point->set_x(pos.at<float>(0));
+            point->set_y(pos.at<float>(1));
+            point->set_z(pos.at<float>(2));
+
+            size++;
+        }
+
+        std::cerr << "SIZE: " << size << "/" << mapPoints.size()
+                  << " " << SLAM.GetTrackingState()
+                  << std::endl;
+
+
 
         std::string output;
         result->SerializeToString(&output);

@@ -112,9 +112,9 @@ class APIServicer(API_gRPC.APIServicer):
 
                 slam.send(request)
 
-                slam.receive()
+                result = slam.receive()
 
-                yield(API.Update())
+                yield(API.Update(state=result.state, points=result.points))
 
             print('end')
 
