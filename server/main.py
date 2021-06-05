@@ -3,6 +3,7 @@ from concurrent import futures
 import subprocess
 import grpc
 import sys
+import time
 import open3d as o3d
 from protocol import api_pb2 as API
 from protocol import api_pb2_grpc as API_gRPC
@@ -14,11 +15,13 @@ class SLAMProcess():
     def __init__(self):
         self.process = subprocess.Popen(
             ['./build/main',
-             'ORB_SLAM2/Vocabulary/ORBvoc.bin', 'slam/TUM.yaml'],
+             'ORB_SLAM2/Vocabulary/ORBvoc.txt', 'slam/TUM.yaml'],
             stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=sys.stderr)
 
         while True:
             r = self.process.stdout.readline()
+            if r == b'':
+                time.sleep(0.1)
             print(r)
             if r == b'INITIALIZED\n':
                 break

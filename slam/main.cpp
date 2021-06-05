@@ -90,6 +90,10 @@ int main(int argc, char **argv) {
         double timestamp = std::time(nullptr);
 
         std::vector<uchar> png(frame_data.begin(), frame_data.end());
+        if (png.size() == 0) {
+            std::cerr << "<EMPTY IMAGE>" << std::endl;
+            continue;
+        }
         cv::Mat frame = cv::imdecode(png, cv::IMREAD_COLOR);
 
         if (frame.empty())  {

@@ -11,7 +11,7 @@ from protocol import api_pb2 as API
 from protocol import api_pb2_grpc as API_gRPC
 from protocol import data_pb2 as Data
 
-images = sorted(glob.glob('ORB_SLAM2/sequence/freiburg1_floor/rgb/*.png'))
+images = sorted(glob.glob('ORB_SLAM2/sequence/freiburg1_xyz/rgb/*.png'))
 
 def track_request():
     for path in images[:]:
@@ -32,7 +32,8 @@ def track_request():
 if __name__ == "__main__":
     print ("Starting client...")
 
-    channel = grpc.insecure_channel('localhost:8080')
+    # channel = grpc.insecure_channel('localhost:8080')
+    channel = grpc.insecure_channel('34.85.1.31:8080')
     stub = API_gRPC.APIStub(channel)
 
 
