@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 
         if (!receive(request)) continue;
 
-        if (request.has_reset() && request.reset()) {
+        if (request.reset()) {
             std::cerr << "<RESET SLAM>" << std::endl;
             SLAM.Reset();
             continue;
