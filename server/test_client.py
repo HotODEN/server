@@ -11,7 +11,7 @@ from protocol import api_pb2 as API
 from protocol import api_pb2_grpc as API_gRPC
 from protocol import data_pb2 as Data
 
-images = sorted(glob.glob('ORB_SLAM2/sequence/freiburg1_xyz/rgb/*.png'))
+images = sorted(glob.glob('ORB_SLAM2/sequence/freiburg1_floor/rgb/*.png'))
 
 def track_request():
     for path in images[:]:
@@ -58,8 +58,8 @@ if __name__ == "__main__":
     vis = o3d.visualization.Visualizer()
     vis.create_window()
     vis.add_geometry(cloud)
-    vis.add_geometry(mesh)
-    vis.get_render_option().point_size = 15
+    # vis.add_geometry(mesh)
+    vis.get_render_option().point_size = 20
 
     def updating_thread():
         for update in stub.Track(track_request()):
